@@ -17,7 +17,7 @@ class CeleryCheck(AgentCheck):
         'workers': '/api/workers',
         'tasks': '/api/tasks',
         'task_types': '/api/task/types',
-        'tasks_queued': '/monitor/broker',
+        'tasks_queued': '/api/queues/length',
     }
 
     # http://docs.celeryproject.org/en/latest/reference/celery.states.html#misc
@@ -115,7 +115,8 @@ class CeleryCheck(AgentCheck):
 
     def get_tasks_queued_data(self, instance, tags):
         data = self._get_data_for_endpoint(instance, 'tasks_queued')
-        for queue_name, tasks_queued in data.items():
+        for queue in data["active_queues"]:
+            queue_name, tasks_queued = queue["name"], queue["messages"]
             queue_tag = 'celery_queue:{}'.format(queue_name)
             self.gauge(
                 '{}.tasks_queued'.format(self.SOURCE_TYPE_NAME),
