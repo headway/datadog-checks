@@ -178,7 +178,8 @@ class CeleryCheck(AgentCheck):
 
                 data = self._get_data_for_endpoint(instance, 'tasks', params={
                     'workername': worker,
-                    'state': state
+                    'state': state,
+                    'offset': 0,
                 })
 
                 self.gauge(
