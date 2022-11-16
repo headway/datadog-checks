@@ -136,17 +136,21 @@ class CeleryCheck(AgentCheck):
 
         for worker_name, worker_data in data.items():
             worker_name = self._split_worker_name(worker_name)
-            queue = worker_data['active_queues'][0]['name']
+            queue = worker_data.get('active_queues')
+            if not queue:
+                queue_tag = 'celery_queue:None'
+            else:
+                queue_tag = 'celery_queue:{}'.format(queue[0]['name'])
+
             worker_tag = 'celery_worker:{}'.format(worker_name)
-            queue_tag = 'celery_queue:{}'.format(queue)
 
             self.gauge(
                 '{}.tasks_registered'.format(self.SOURCE_TYPE_NAME),
-                len(worker_data['registered']),
+                len(worker_data.get('registered', [])),
                 tags=tags + [worker_tag, queue_tag]
             )
 
-            stats = worker_data['stats']
+            stats = worker_data.get('stats', {})
             if stats.get('pool', None):
                 self.gauge(
                     '{}.max-concurrency'.format(self.SOURCE_TYPE_NAME),
@@ -154,7 +158,7 @@ class CeleryCheck(AgentCheck):
                     tags=tags + [worker_tag, queue_tag]
                 )
 
-            for task_name, total in stats['total'].items():
+            for task_name, total in stats.get('total', {}).items():
                 self.gauge(
                     '{}.tasks_completed'.format(self.SOURCE_TYPE_NAME),
                     total,
